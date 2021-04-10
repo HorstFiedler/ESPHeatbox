@@ -1,0 +1,30 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "PlatformIO",
+			"task": "Remote Upload (ESPHeatbox)",
+			"problemMatcher": [
+				"$platformio"
+			],
+			"label": "PlatformIO: Remote Upload (ESPHeatbox)"
+		},
+		{
+			"type": "PlatformIO",
+			"task": "Build (ESPHeatbox)",
+			"problemMatcher": [
+				"$platformio"
+			],
+			"group": "build",
+			"label": "PlatformIO: Build (ESPHeatbox)"
+		},
+		{
+			"type": "PlatformIO",
+			"task": "Upload (ESPHeatbox)",
+			"problemMatcher": [
+				"$platformio"
+			],
+			"label": "PlatformIO: Upload (ESPHeatbox)"
+		}
+	]
+}
