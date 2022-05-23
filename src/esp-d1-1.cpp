@@ -89,8 +89,8 @@ float getAdcValue(int cnr) {
 
 void setup_gpio() {
   Serial.println();
-  Serial.println(" ! Setup");
-  Serial.print(" ! GPIO Pins: ");
+  Serial.println(F(" ! Setup"));
+  Serial.print(F(" ! GPIO Pins: "));
   for (int i = 0; i < 5; i=i + 1) {  
     pinMode(pins[i], OUTPUT);
     Serial.print(" ");
@@ -103,17 +103,17 @@ void setup_gpio() {
 }
 
 void setup_i2c() {
-  Serial.println(" ! I2C Wire");
+  Serial.println(F(" ! I2C Wire"));
   Wire.begin();
-  Serial.print(" ! trying ADS1115 ... ");
+  Serial.print(F(" ! trying ADS1115 ... "));
   hasadc = adc.init();
   if(hasadc){
     adc.setVoltageRange_mV(ADS1115_RANGE_6144);  // gain, +/- 6144 mV
     adc.setConvRate(ADS1115_8_SPS);  // 8 samples / sec
     adc.setMeasureMode(ADS1115_SINGLE);  
-    Serial.println(" initialized (single mode)");
+    Serial.println(F(" initialized (single mode)"));
   } else {
-    Serial.println(" not available!");
+    Serial.println(F(" not available!"));
   }
 }
 
@@ -144,18 +144,17 @@ String composeClientID() {
 }
 
 void setup_wifi() {
-  Serial.print(" ! Setup Wifi");
+  Serial.print(F(" ! Setup Wifi"));
   wifiMulti.addAP("MyHomeUG", "TJSXAWFNAAWKKYIH");
   wifiMulti.addAP("MyHomeOG", "TJSXAWFNAAWKKYIH");
-  Serial.print("  ");
+  Serial.print(F("  "));
   while (wifiMulti.run() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.print(" connected, ");
-  Serial.print("AP:");
+  Serial.print(F(" connected, AP:"));
   Serial.print(WiFi.SSID());
-  Serial.print(" IP:");
+  Serial.print(F(" IP:"));
   Serial.println(WiFi.localIP());
   clientId = composeClientID();   // used as part of topic and (lowercase) as OTA hostname
 }
@@ -165,7 +164,7 @@ void setup_wifi() {
  * to quit screen: ^a\
  */
 void setup_ota() {
-  Serial.print(" ! Setup OTA as ");
+  Serial.print(F(" ! Setup OTA as "));
 
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);
@@ -188,10 +187,11 @@ void setup_ota() {
       type = "filesystem";
     }
 
-    Serial.println("   Start updating " + type);
+    Serial.print(F("   Start updating "));
+    Serial.println(type);
   });
   ArduinoOTA.onEnd([]() {
-   Serial.println("   End, resetting");
+   Serial.println(F("   End, resetting"));
    ESP.reset();
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
@@ -206,16 +206,16 @@ void setup_ota() {
     else if (error == OTA_END_ERROR) Serial.println("End Failed");
   });
   ArduinoOTA.begin();
-  Serial.println(" ! OTA ready");
+  Serial.println(F(" ! OTA ready"));
 }
    
 /**
  * MQTT message handling
  */
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("=> ");
+  Serial.print(F("=> "));
   Serial.print(topic);
-  Serial.print(" ");
+  Serial.print(F(" "));
   String dest = String(topic);
   if (dest.startsWith("cmnd/")) {
     String target = dest.substring(dest.lastIndexOf("/") + 1);
@@ -243,19 +243,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
       Serial.println(); 
 
       if (length == 0 || changed) {
-        Serial.print("<= ");
-        dest = "stat" + dest.substring(dest.indexOf("/"));
-        Serial.print(dest);
-        Serial.print(" ");
+        Serial.print(F("<= "));
+        Serial.print(F("stat"));
+        Serial.print(dest.substring(dest.indexOf("/")));
+        Serial.print(F(" "));
         Serial.println(reply);
         mqttClient.publish(dest.c_str(), reply.c_str(), true);
       }
     } else if (target.startsWith("ADC")) {
       Serial.println();
-      Serial.print("<= ");
+      Serial.print(F("<= "));
       dest = "stat" + dest.substring(dest.indexOf("/"));
       Serial.print(dest);
-      Serial.print(" ");
+      Serial.print(F(" "));
       String reply;
       if (hasadc) {
         int cnr = target.charAt(3) - 49;   // 0..3
@@ -268,11 +268,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
     } else if (target == "RST") {
       mqttClient.disconnect();
       Serial.println();
-      Serial.println(" ! Restarting");
+      Serial.println(F(" ! Restarting"));
       //TODO: keep current setting (DIO states) in SPDIFF FS       
       ESP.restart();
     } else {
-      Serial.print(" invalid");
+      Serial.print(F(" invalid"));
     }
     Serial.println();
   }
