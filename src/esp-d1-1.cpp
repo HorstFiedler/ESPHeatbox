@@ -2,7 +2,7 @@
 /**
  * This version is still in use @s4fh-heaterbox, 
  * requires mqttlogger for ADC scaling raw value to temperature
- * Follow on version including webserver: PlatformIO/Projects/esphive
+ * Follow on version including webserver: PlatformIO/Projects/esphive and EEPROM state persistance
  * 
  * Best Intro: file:///home/horst/Dokumente/elektronik/downloads/A-Beginner's-Guide-to-the-ESP8266.pdf
  * Simple wemos D1 mini  MQTT example
@@ -95,9 +95,9 @@ void setup_gpio() {
     pinMode(pins[i], OUTPUT);
     Serial.print(" ");
     Serial.print(pins[i]);
-    // initial setting
-    //if (i > 0)
-    //  digitalWrite(pins[i], HIGH);   // initial state of led is on, others are off 
+    // initial setting, initial state of led is on, others are off
+    // the logger client will override settings, but requires mqtt connection!  
+    digitalWrite(pins[i], i > 0 ? HIGH : LOW );
   }
   Serial.println();
 }
@@ -285,30 +285,34 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void connect_mqtt() {
   // Loop until we're (re)connected
   while (!mqttClient.connected()) {
-    Serial.print(" ! MQTT connection...");
+    Serial.print(F(" ! MQTT connection..."));
     // Attempt to connect (without randomization as clientId is unique)
     //cid += String(micros() & 0xff, 16); // to randomise. sort of
     if (mqttClient.connect(clientId.c_str())) {
-      Serial.print("... connected as ");
+      Serial.print(F("... connected as "));
       Serial.println(clientId);  // print accepts String objects
       // Once connected resubscribe to receive commands
-      String subscription = "cmnd/" + clientId + "/#";
+      String subscription = F("cmnd/") + clientId + F("/#");
       mqttClient.subscribe(subscription.c_str() );
       Serial.print(" ^ ");
       Serial.println(subscription);
-      String topic = "tele/" + clientId + "/INFO";
+      String topic = F("tele/") + clientId + F("/INFO");
       // announce availibility (to dedect reboots too)
-      String payload = "{\"REVISION\":\"esp-d1-1\"}";
+      time_t bs = BUILD_SESSION;
+      String payload = F("{\"REVISION\":\"") + String(ctime(&bs)) + F("\"}");
+      payload.replace("\n", "");   // json doesnt allow \n as created by ctime
       mqttClient.publish(topic.c_str(), payload.c_str(), false );
 
-      Serial.print("<= ");
-      Serial.println(topic + " " + payload); 
+      Serial.print(F("<= "));
+      Serial.print(topic);
+      Serial.print(F(" "));
+      Serial.println(payload);
     } else {
-      Serial.print("... failed, rc=");
+      Serial.print(F("... failed, rc="));
       Serial.print(mqttClient.state());
-      Serial.print(" wifi=");
+      Serial.print(F(" wifi="));
       Serial.print(WiFi.status());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(F(" try again in 5 seconds"));
       // Wait 5 seconds before retrying
       delay(5000);
     }
