@@ -58,8 +58,8 @@
 // GPIO16 is not defined ????
 #define D0 16
 
-// MQTT server (S4FH) 
-const char* mqtt_server = "192.168.1.240";
+// MQTT server (S4FH2) 
+const char* mqtt_server = "192.168.1.238";
 String clientId;  // part of topic (and, with lowercase mac as OTA stub/host name) 
 
 ESP8266WiFiMulti wifiMulti;
@@ -91,11 +91,11 @@ void setup_gpio() {
   Serial.println();
   Serial.println(F(" ! Setup"));
   Serial.print(F(" ! GPIO Pins: "));
-  for (int i = 0; i < 5; i=i + 1) {  
+  for (int i = 0; i < 5; i++) {  
     pinMode(pins[i], OUTPUT);
     Serial.print(" ");
     Serial.print(pins[i]);
-    // initial setting, initial state of led is on, others are off
+    // initial setting, initial state of esp-led is on, other dout pins (D5..D8) are off
     // the logger client will override settings, but requires mqtt connection!  
     digitalWrite(pins[i], i > 0 ? HIGH : LOW );
   }
@@ -218,6 +218,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(F(" "));
   String dest = String(topic);
   if (dest.startsWith("cmnd/")) {
+    dest.replace("cmnd/", "stat/"); // reply topic. WARNING, shall occur ONLY at begin of topic
     String target = dest.substring(dest.lastIndexOf("/") + 1);
     if (target == "DOUT") {
       boolean changed = false;
@@ -232,7 +233,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
             int vi = vc - 48;
             if (vo != vi) {
               changed = true;
-              lastMsg = 0;  // send INFO without delay
+              lastMsg = 0;  // send tele INFO without delay
             }
             digitalWrite(pins[i], vi);   // Turn the LED on when 0 (open collector logic)
             vo = vi;
@@ -242,10 +243,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
       }
       Serial.println(); 
 
-      if (length == 0 || changed) {
+      if (length == 0 || changed) {   // send stat as reply
         Serial.print(F("<= "));
-        Serial.print(F("stat"));
-        Serial.print(dest.substring(dest.indexOf("/")));
+        Serial.print(dest);
         Serial.print(F(" "));
         Serial.println(reply);
         mqttClient.publish(dest.c_str(), reply.c_str(), true);
@@ -253,7 +253,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
     } else if (target.startsWith("ADC")) {
       Serial.println();
       Serial.print(F("<= "));
-      dest = "stat" + dest.substring(dest.indexOf("/"));
       Serial.print(dest);
       Serial.print(F(" "));
       String reply;
