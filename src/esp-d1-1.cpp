@@ -58,8 +58,8 @@
 // GPIO16 is not defined ????
 #define D0 16
 
-// MQTT server (S4FH2) 
-const char* mqtt_server = "192.168.1.238";
+// MQTT server (S4FH) 
+const char* mqtt_server = "192.168.1.240";
 String clientId;  // part of topic (and, with lowercase mac as OTA stub/host name) 
 
 ESP8266WiFiMulti wifiMulti;
@@ -218,7 +218,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print(F(" "));
   String dest = String(topic);
   if (dest.startsWith("cmnd/")) {
-    dest.replace("cmnd/", "stat/"); // reply topic. WARNING, shall occur ONLY at begin of topic
+    dest = "stat" + dest.substring(dest.indexOf("/"));  // reply topic
     String target = dest.substring(dest.lastIndexOf("/") + 1);
     if (target == "DOUT") {
       boolean changed = false;
