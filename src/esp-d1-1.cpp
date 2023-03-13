@@ -60,6 +60,9 @@
 
 // MQTT server (S4FH) 
 const char* mqtt_server = "192.168.1.240";
+// subscribing to those subtopics
+const char* subtopics[] = {"/DOUT", "/ADC", "/RST"};
+
 String clientId;  // part of topic (and, with lowercase mac as OTA stub/host name) 
 
 ESP8266WiFiMulti wifiMulti;
@@ -291,12 +294,18 @@ void connect_mqtt() {
       Serial.print(F("... connected as "));
       Serial.println(clientId);  // print accepts String objects
       // Once connected resubscribe to receive commands
-      String subscription = F("cmnd/") + clientId + F("/#");
-      mqttClient.subscribe(subscription.c_str() );
-      Serial.print(" ^ ");
-      Serial.println(subscription);
-      String topic = F("tele/") + clientId + F("/INFO");
+      // avoiding cmnd/clientId/# to inhibit HEAT passed thru
+      for (auto val : subtopics) {
+        char topic[32] = "cmnd/";
+        strcat(topic, clientId.c_str());
+        strcat(topic, val);
+        mqttClient.subscribe(topic);
+        Serial.print(" ^ ");
+        Serial.println(topic);
+      }
+      
       // announce availibility (to dedect reboots too)
+      String topic = F("tele/") + clientId + F("/INFO");
       time_t bs = BUILD_SESSION;
       String payload = F("{\"REVISION\":\"") + String(ctime(&bs)) + F("\"}");
       payload.replace("\n", "");   // json doesnt allow \n as created by ctime
