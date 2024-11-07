@@ -1,6 +1,7 @@
 #include <Arduino.h>
 /**
- * This version is still in use @s4fh-heaterbox, 
+ * This version is still in use for quadswitch and heaterbox, 
+ * originally connected to mqttbroker@s4fh, now @mediapi 
  * requires mqttlogger for ADC scaling raw value to temperature
  * Follow on version including webserver: PlatformIO/Projects/esphive and EEPROM state persistance
  * 
@@ -58,8 +59,8 @@
 // GPIO16 is not defined ????
 #define D0 16
 
-// MQTT server (S4FH) 
-const char* mqtt_server = "192.168.1.240";
+// MQTT server (mediapi)
+const char* mqtt_server = "192.168.1.237";
 // subscribing to those subtopics
 const char* subtopics[] = {"/DOUT", "/ADC", "/RST"};
 
@@ -236,7 +237,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
             int vi = vc - 48;
             if (vo != vi) {
               changed = true;
-              lastMsg = 0;  // send tele INFO without delay
             }
             digitalWrite(pins[i], vi);   // Turn the LED on when 0 (open collector logic)
             vo = vi;
@@ -351,7 +351,7 @@ void loop() {
   
   // periodic measure and publish
   long now = millis();    // Attention: wraps (as micros() does)
-  if ((now - lastMsg > msDelta ) || (now < lastMsg) || lastMsg == 0) {
+  if ((now - lastMsg > msDelta ) || (now < lastMsg)) {
     lastMsg = now;
     String payload = "{\"DIO\":\"";   // Json formatted 
     for (int di = 0; di < 5; di++)
